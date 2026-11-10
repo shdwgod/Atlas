@@ -1,0 +1,76 @@
+name: Tester exe (embedded playbook)
+
+# Builds AtlasManager.exe with the Atlas package (.apbx) baked in, the same
+# variant tools/release/build-rc.sh makes on Linux. The package is a LocalTest
+# build (the same one app.yml builds for its tester checks), so it is for your
+# own use, not a release.
+#
+# Run it from Actions -> "Tester exe (embedded playbook)" -> Run workflow, or
+# push a change to this file on na-jack-rewrite.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - na-jack-rewrite
+    paths:
+      - ".github/workflows/tester-exe.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tester-exe-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build the tester exe (Windows)
+    runs-on: windows-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout code
+        # gh api repos/actions/checkout/commits/v7.0.0 --jq '.sha'
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Install the Rust toolchain
+        # The version comes from app/rust-toolchain.toml.
+        # gh api repos/dtolnay/rust-toolchain/commits/stable --jq '.sha'
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+        with:
+          toolchain: 1.98.1
+          components: rustfmt, clippy
+
+      - name: Cache Cargo registry and build output
+        # gh api repos/Swatinem/rust-cache/commits/v2 --jq '.sha'
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        with:
+          workspaces: app
+          cache-workspace-crates: true
+
+      - name: Build the Atlas package (LocalTest)
+        shell: pwsh
+        run: ./tools/build/Build-Playbook.ps1 -LocalTest
+
+      - name: Build AtlasManager.exe with the package embedded
+        shell: pwsh
+        working-directory: app
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # build.rs wants the id to be app/Cargo.toml's version plus -rc.N.
+          $metadata = cargo metadata --no-deps --format-version 1 --locked | ConvertFrom-Json
+          $version = $metadata.packages.Where({ $_.name -eq 'atlas-app' })[0].version
+          $apbx = Join-Path $env:GITHUB_WORKSPACE 'playbook/Atlas Test.apbx'
+          ./tools/Build-Release.ps1 -RcId "$version-rc.1" -EmbedApbx $apbx
+
+      - name: Save the executable
+        # gh api repos/actions/upload-artifact/commits/v7.0.1 --jq '.sha'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: atlas-manager-embedded-windows-x64
+          path: app/target/x86_64-pc-windows-msvc/release/AtlasManager.exe
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
