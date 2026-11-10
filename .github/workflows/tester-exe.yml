@@ -1,9 +1,9 @@
 name: Tester exe (embedded playbook)
 
 # Builds AtlasManager.exe with the Atlas package (.apbx) baked in, the same
-# variant tools/release/build-rc.sh makes on Linux. The package is a LocalTest
-# build (the same one app.yml builds for its tester checks), so it is for your
-# own use, not a release.
+# variant tools/release/build-rc.sh makes on Linux. The package is the full one,
+# with every eligibility gate (SupportedBuilds included), built and verified the
+# way build-rc.sh does it. It is not a release: nothing is tagged or published.
 #
 # Run it from Actions -> "Tester exe (embedded playbook)" -> Run workflow, or
 # push a change to this file on na-jack-rewrite.
@@ -55,9 +55,16 @@ jobs:
           workspaces: app
           cache-workspace-crates: true
 
-      - name: Build the Atlas package (LocalTest)
+      - name: Build the full Atlas package
         shell: pwsh
-        run: ./tools/build/Build-Playbook.ps1 -LocalTest
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # No -LocalTest and no -Removals: playbook.conf keeps SupportedBuilds and
+          # the other gates, as in build-rc.sh and release.yml.
+          ./tools/build/Build-Playbook.ps1 -FileName 'Atlas Test' -ReplaceOldPlaybook -DontOpenPbLocation
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./tools/build/Test-Apbx.ps1 -Path (Join-Path $env:GITHUB_WORKSPACE 'playbook/Atlas Test.apbx')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Build AtlasManager.exe with the package embedded
         shell: pwsh
