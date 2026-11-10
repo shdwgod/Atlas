@@ -1,0 +1,68 @@
+From 86af17bbeb93849789bbbd69727ccf37d73729d3 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 19:26:37 +0000
+Subject: [PATCH] fix(compat): list Windows 11 build 26300.9974 / 26200.9974
+ (KB5132061, 2026-11 B)
+
+---
+ app/src/services/windows_release.rs              |  2 +-
+ .../Scripts/Compatibility/windows-releases.json  | 16 ++++++++++++++--
+ 2 files changed, 15 insertions(+), 3 deletions(-)
+
+diff --git a/app/src/services/windows_release.rs b/app/src/services/windows_release.rs
+index 29edc09f..003312aa 100644
+--- a/app/src/services/windows_release.rs
++++ b/app/src/services/windows_release.rs
+@@ -461,7 +461,7 @@ mod tests {
+ 
+     #[test]
+     fn catalogued_versions_are_released_and_prerelease_branches_are_refused() {
+-        for (build, revision) in [(26200, 6584), (26300, 9457), (26300, 9550)] {
++        for (build, revision) in [(26200, 6584), (26200, 9974), (26300, 9457), (26300, 9550), (26300, 9974)] {
+             assert_eq!(classify(build, revision, "ge_release"), Status::Released, "{build}.{revision}");
+             // A promoted Insider build number only counts on a release branch.
+             let insider = format!("{build}.1.amd64fre.rs_prerelease");
+diff --git a/playbook/Executables/AtlasModules/Scripts/Compatibility/windows-releases.json b/playbook/Executables/AtlasModules/Scripts/Compatibility/windows-releases.json
+index 2dc5ab51..32d11369 100644
+--- a/playbook/Executables/AtlasModules/Scripts/Compatibility/windows-releases.json
++++ b/playbook/Executables/AtlasModules/Scripts/Compatibility/windows-releases.json
+@@ -14,8 +14,8 @@
+   "sourceUrl": "https://learn.microsoft.com/en-us/windows/release-health/windows11-release-information",
+   "sourceCommit": "f366cc818ab2aa05af44561657da401727e0bab1",
+   "sourceSha256": "237F9E4071458E43D533B2B3C41CEA7B56D5DAC65480CEC2D15BDCB48CE1E1DE",
+-  "updatedAt": "2026-10-13T21:41:00.0000000Z",
+-  "asOfDate": "2026-10-15",
++  "updatedAt": "2026-11-10T21:00:00.0000000Z",
++  "asOfDate": "2026-11-10",
+   "releases": [
+     {
+       "version": "10.0.26200.6584",
+@@ -209,6 +209,12 @@
+       "updateType": "2026-10 B",
+       "kb": "KB5127648"
+     },
++    {
++      "version": "10.0.26200.9974",
++      "availableDate": "2026-11-10",
++      "updateType": "2026-11 B",
++      "kb": "KB5132061"
++    },
+     {
+       "version": "10.0.26300.9457",
+       "availableDate": "2026-09-29",
+@@ -226,6 +232,12 @@
+       "availableDate": "2026-10-13",
+       "updateType": "2026-10 B",
+       "kb": "KB5127648"
++    },
++    {
++      "version": "10.0.26300.9974",
++      "availableDate": "2026-11-10",
++      "updateType": "2026-11 B",
++      "kb": "KB5132061"
+     }
+   ]
+ }
+-- 
+2.43.0
+

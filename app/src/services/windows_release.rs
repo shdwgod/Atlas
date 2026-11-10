@@ -461,7 +461,7 @@ mod tests {
 
     #[test]
     fn catalogued_versions_are_released_and_prerelease_branches_are_refused() {
-        for (build, revision) in [(26200, 6584), (26300, 9457), (26300, 9550)] {
+        for (build, revision) in [(26200, 6584), (26200, 9974), (26300, 9457), (26300, 9550), (26300, 9974)] {
             assert_eq!(classify(build, revision, "ge_release"), Status::Released, "{build}.{revision}");
             // A promoted Insider build number only counts on a release branch.
             let insider = format!("{build}.1.amd64fre.rs_prerelease");
